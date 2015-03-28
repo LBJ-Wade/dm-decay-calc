@@ -21,19 +21,22 @@ matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 from scipy.integrate import quad
+from scan_params import *
 
+"""Set up scan parameters
 n_omegam=25
 n_omegar=25
 n_tau=25
 omegam_array=np.linspace(0.09, 0.3, n_omegam)
 omegar_array=np.linspace(0.001, 0.09, n_omegar)
 logtau_array=np.linspace(0, 30, n_tau)
+"""
 
 """
 Read in data.
 
-The first element of x_output must correspond to the 
-initial condition of y_ini; it's imposed by odeint.
+n.b. The first element of x_output (or z) must correspond to the initial condition
+of y_ini in the ode code -- it's imposed by odeint.
 """
 
 """OHD data"""
@@ -43,6 +46,7 @@ ohd_data=ohd_file[:,1]
 ohd_error=ohd_file[:,2]
 ohd_z=ohd_file[:,0]
 ohd_x_output=-np.log(ohd_z+1)
+
 """SNIa data"""
 sne_file=np.loadtxt('SCPUnion2.1_mu_vs_z.txt',usecols=range(1,4),skiprows=5)
 sne_cov=np.loadtxt('SCPUnion2.1_covmat_sys.txt')
@@ -78,7 +82,7 @@ def deriv(y,x,param):
     dv = +y[0]/(tau*E) - 3*(1+w)*y[1]
     return [du,dv]
 
-"""Solve ODE to get hubble parameter at any x==ln(a); * H0 multiplied * """
+"""Solve ODE to get hubble parameter at any x==ln(a); n.b. H0 factor included """
 def get_hubble(omegam0, omegar0, tau, x):
     omegal=1-omegam0-omegar0 #omegal=omegal0
     x_tmp=np.array(x)
@@ -95,10 +99,12 @@ def integrand(z, omegam0, omegar0, tau):
     x=np.log(1.0/(1.0+z))
     return 1.0/get_hubble(omegam0, omegar0, tau, x)
 
+"""Calculate D_L (dimensional); used in the calculation of mu (for SNIa)"""
 def get_dl(omegam0, omegar0, tau, z):
     c=3*1e5
     return (1.0+z)*c*quad(integrand, 0, z, args=(omegam0, omegar0, tau))[0]
 
+"""Construct D_L array w.r.t observed redshifts"""
 dl_theory=[]
 for z in sne_z:
     dl_theory.append(round(get_dl(0.2, 0.01, 1000, z),2))
@@ -127,15 +133,16 @@ def get_chi2_ohd(omegam0, omegar0, tau):
     chi2_ohd=np.sum(np.power(ohd_theory-ohd_data,2)/np.power(ohd_error,2))       
     return chi2_ohd
     
+"""With system error + covariance"""
 def get_chi2_sne2(omegam0, omegar0, tau):
     mu=[]
     for z in sne_z:
         tmp=5*np.log10(get_dl(omegam0, omegar0, tau, z))+25.0
         mu.append(tmp)
-#    chi2_sne=np.sum(np.power(mu-sne_data,2)/np.power(sne_error, 2))
     chi2_sne=np.dot(mu-sne_data, np.dot(mu-sne_data, sne_inv_cov))
     return chi2_sne
             
+"""No covariance information"""
 def get_chi2_sne(omegam0, omegar0, tau):
     chi2_sne=0
     for iz, z in enumerate(sne_z):
@@ -144,9 +151,10 @@ def get_chi2_sne(omegam0, omegar0, tau):
         chi2_sne += np.power((mu-sne_data[iz]),2)/np.power(sne_error[iz], 2)
     return chi2_sne
 
+"""Currently we are not adding up two chi2's, but plot them separately."""
 def get_chi2(omegam0, omegar0, tau):
-    return get_chi2_ohd(omegam0, omegar0, tau)
-    #return get_chi2_sne(omegam0, omegar0, tau)
+    #return get_chi2_ohd(omegam0, omegar0, tau)
+    return get_chi2_sne2(omegam0, omegar0, tau)
         
 '''Fill in the chi2 matrix'''
 chi2=np.zeros((n_omegam, n_omegar, n_tau))
@@ -155,10 +163,8 @@ for iom,omegam0 in enumerate(omegam_array):
     for iol, omegar0 in enumerate(omegar_array):
         for itau, logtau in enumerate(logtau_array):
             tau = np.exp(logtau)
-            #chi2sne=get_chi2_sne(omegam0, omegar0, tau)            
-            #chi2ohd=get_chi2_ohd(omegam0, omegar0, tau)
             tmp=get_chi2(omegam0, omegar0, tau)
-            #print iom, iol, itau, tmp
+            print iom, iol, itau, tmp
             if minchi2>tmp:
                 minchi2=tmp
                 peakOm, peakOr, peakTau = omegam0, omegar0, tau
@@ -167,8 +173,10 @@ for iom,omegam0 in enumerate(omegam_array):
 fid="chi2file-"+str(n_omegam)+'-'+str(n_omegar)+'-'+str(n_tau)+'.bin'
 chi2file = chi2.tofile(fid)
 
-#It's suggested to first obtain the Chi2 result, then plot it out with the
-#following code.
+"""
+It's suggested to first obtain the Chi2 result, then plot it out with the
+following code.
+"""
 
 """
 dchi2=chi2-minchi2
