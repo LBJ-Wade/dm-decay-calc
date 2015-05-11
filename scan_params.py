@@ -1,10 +1,10 @@
 import numpy as np
 
 """Initialize scanning parameters"""
-n_omegam = 25
-n_omegar = 25
-n_tau	 = 25
+n_omega_dm = 5
+n_omega_lambda  = 5
+n_tau	   = 5
 
-omegam_array=np.linspace(0.09, 0.3, n_omegam)
-omegar_array=np.linspace(0.001, 0.09, n_omegar)
+omega_dm_array=np.linspace(1e8, 1e10, n_omega_dm)
+omega_lambda_array=np.linspace(0.1, 0.9, n_omega_lambda)
 logtau_array=np.linspace(0, 30, n_tau)
