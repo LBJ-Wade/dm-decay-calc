@@ -39,7 +39,7 @@ num_obs = int(sys.argv[1])
 obs={0:'ohd', 1:'ohd+H0', 2:'sne', 3:'sne+ohd', 4:'sne+ohd+H0',
         5:'sne+ohd+H0+Om'}
 
-z_ini = 100.
+z_ini = 1000.
 omega_drI = 1.  # At large z_ini, no decay happened yet; nonzero as we use log.
 omega_b0 = 0.02  # omega_b0 is defined wrt Hn=100; Omega_b0_LCDM*h^2=omega_b0 
 omega_r0 = 2.47e-5  # The same as above.
