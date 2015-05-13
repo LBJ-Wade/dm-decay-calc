@@ -38,9 +38,10 @@ if len(sys.argv) != 2 or sys.argv[1] == '-h':
 num_obs = int(sys.argv[1])
 obs={0:'ohd', 1:'ohd+H0', 2:'sne', 3:'sne+ohd', 4:'sne+ohd+H0',
         5:'sne+ohd+H0+Om'}
+print('Using', obs[num_obs], 'as observable.')
 
 z_ini = 1000.
-omega_drI = 1.  # At large z_ini, no decay happened yet; nonzero as we use log.
+omega_drI = 1e-3  # At large z_ini, no decay happened yet; nonzero as we use log.
 omega_b0 = 0.02  # omega_b0 is defined wrt Hn=100; Omega_b0_LCDM*h^2=omega_b0 
 omega_r0 = 2.47e-5  # The same as above.
 
@@ -187,6 +188,7 @@ def get_chi2_hubble(omega_dmI, omega_lambdaI, tau):
     x_H0 = 0.0  # x==ln(a(H0)=1)
     ohd_theory = get_hubble(x_H0, omega_dmI, omega_lambdaI, tau)
     chi2_hubble = np.power(ohd_theory[0] - H0, 2)/np.power(H0_error, 2)
+    return chi2_hubble
 
 
 '''For each parameter set (initial value), get chi2'''   
@@ -221,15 +223,18 @@ def get_chi2(omega_dmI, omega_lambdaI, tau):
     if num_obs == 0:
         return get_chi2_ohd(omega_dmI, omega_lambdaI, tau) 
     elif num_obs == 1:
-        return get_chi2_sne2(omega_dmI, omega_lambdaI, tau)
+        return get_chi2_ohd(omega_dmI, omega_lambdaI, tau) + \
+                 get_chi2_hubble(omega_dmI, omega_lambdaI, tau)
     elif num_obs == 2:
+        return get_chi2_sne2(omega_dmI, omega_lambdaI, tau)
+    elif num_obs == 3:
         return get_chi2_sne2(omega_dmI, omega_lambdaI, tau) + \
                  get_chi2_ohd(omega_dmI, omega_lambdaI, tau)
-    elif num_obs == 3:
+    elif num_obs == 4:
         return get_chi2_sne2(omega_dmI, omega_lambdaI, tau) + \
                  get_chi2_ohd(omega_dmI, omega_lambdaI, tau) + \
                  get_chi2_hubble(omega_dmI, omega_lambdaI, tau)
-    elif num_obs == 4:
+    elif num_obs == 5:
         return get_chi2_sne2(omega_dmI, omega_lambdaI, tau) + \
                  get_chi2_ohd(omega_dmI, omega_lambdaI, tau) + \
                  get_chi2_hubble(omega_dmI, omega_lambdaI, tau) + \
@@ -244,10 +249,9 @@ chi2 = np.zeros((n_omega_dm, n_omega_lambda, n_tau))
 minchi2 = 100000
 for iom, omega_dmI in enumerate(omega_dm_array):
     for iol, omega_lambdaI in enumerate(omega_lambda_array):
-        for itau, logtau in enumerate(logtau_array):
-            tau = np.exp(logtau)
+        for itau, tau in enumerate(tau_array):
             tmp = get_chi2(omega_dmI, omega_lambdaI, tau)
-            print omega_dmI, omega_lambdaI, logtau, tmp
+            print iom, iol, itau, 'of', n_omega_dm, n_omega_lambda, n_tau
             if minchi2 > tmp:
                 minchi2 = tmp
                 # peakOm, peakOl, peakTau = omega_dmI, omega_lambdaI, tau
@@ -258,40 +262,3 @@ print('minchi2 is ', minchi2)
 fid="chi2file-"+obs[num_obs]+'-'+str(n_omega_dm)+'-'+str(n_omega_lambda)+'-'+str(n_tau)+'.bin'
 chi2file = chi2.tofile(fid)
 #np.savetxt('chi2-hr.txt', chi2, fmt="%.2f")
-
-"""
-minchi2 = np.amin(chi2)
-dchi2 = chi2-minchi2
-
-'''Integrate over the third (tau) dimension'''
-chi2_omol = -2*np.log(np.sum(np.exp(-dchi2/2.), axis=2))
-minchi2_omol = np.min(chi2_omol)
-[peak_om_index, peak_ol_index] = np.unravel_index(np.argmin(chi2_omol), np.shape(chi2_omol))
-peak_om = omega_dm_array[peak_om_index]
-peak_ol = omega_lambda_array[peak_ol_index]
-dchi2_omol = chi2_omol-minchi2_omol
-plt.figure()
-contourOmOl = plt.contour(omega_lambda_array, omega_dm_array, dchi2_omol, levels=[2.3, 5.0])
-plt.plot(peak_ol, peak_om, 'r*')
-# plt.clabel(contourOmOl, inline=1,  extent=(1, 3, 0, 2))
-plt.xlabel(r'$\Omega_\Lambda$', fontsize=big)
-plt.ylabel(r'$\Omega_m$', fontsize=big)
-plt.set_yscale("log")
-plt.savefig('ol-om-'+obs[num_obs]+'.eps')
-
-'''Integrate over the second (omega_lambda) dimension'''
-chi2_omtau = -2*np.log(np.sum(np.exp(-dchi2/2.), axis=1))
-minchi2_omtau = np.min(chi2_omtau)
-[peak_om_index, peak_logtau_index] = np.unravel_index(np.argmin(chi2_omtau), np.shape(chi2_omtau))
-peak_om = omega_dm_array[peak_om_index]
-peak_logtau = logtau_array[peak_logtau_index]
-dchi2_omtau = chi2_omtau-minchi2_omtau
-plt.figure()
-contourOmTau = plt.contour(logtau_array, omega_dm_array, dchi2_omtau, levels=[2.3, 5.0])
-plt.plot(peak_logtau, peak_om, 'r*')
-# plt.clabel(contourOmTau, inline=1)
-plt.xlabel(r'$\tau$', fontsize=big)
-plt.ylabel(r'$\Omega_m$', fontsize=big)
-plt.set_yscale("log")
-plt.savefig('tau-om-'+obs[num_obs]+'.eps')
-"""

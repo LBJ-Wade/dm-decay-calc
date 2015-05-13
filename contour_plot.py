@@ -21,7 +21,7 @@ num_obs = int(sys.argv[1])
 obs={0:'ohd', 1:'ohd+H0', 2:'sne', 3:'sne+ohd', 4:'sne+ohd+H0',
         5:'sne+ohd+H0+Om'}
 
-big = 18
+big = 16
 
 fid = "chi2file-"+obs[num_obs]+'-'+str(n_omega_dm)+'-'+str(n_omega_lambda)+\
         '-'+str(n_tau)+'.bin'
@@ -46,25 +46,24 @@ ax  = fig.add_subplot(121)
 contourOmOl = ax.contour(omega_lambda_array, omega_dm_array, 
         dchi2_omol, levels=[2.3, 5.0])
 ax.plot(peak_ol, peak_om, 'r*')
-# plt.clabel(contourOmOl, inline=1,  extent=(1, 3, 0, 2))
 ax.set_xlabel(r'$\Omega_\Lambda$', fontsize=big)
-ax.set_ylabel(r'$\Omega_m$', fontsize=big)
+ax.set_ylabel(r'$\Omega_{DM}$', fontsize=big)
 ax.set_yscale("log")
 
 '''Integrate over the second (omega_lambda) dimension'''
 chi2_omtau = -2*np.log(np.sum(np.exp(-dchi2/2.), axis=1))
 minchi2_omtau = np.min(chi2_omtau)
-[peak_om_index, peak_logtau_index] = np.unravel_index(np.argmin(chi2_omtau), 
+[peak_om_index, peak_tau_index] = np.unravel_index(np.argmin(chi2_omtau), 
         np.shape(chi2_omtau))
 peak_om = omega_dm_array[peak_om_index]
-peak_logtau = logtau_array[peak_logtau_index]
+peak_tau = tau_array[peak_tau_index]
 dchi2_omtau = chi2_omtau-minchi2_omtau
 bx = fig.add_subplot(122)
-contourOmTau = bx.contour(logtau_array, omega_dm_array, dchi2_omtau, 
+contourOmTau = bx.contour(tau_array, omega_dm_array, dchi2_omtau, 
         levels=[2.3, 5.0])
-bx.plot(peak_logtau, peak_om, 'r*')
-# plt.clabel(contourOmTau, inline=1)
+bx.plot(peak_tau, peak_om, 'r*')
 bx.set_xlabel(r'$\tau$', fontsize=big)
 #bx.set_ylabel(r'$\Omega_m$', fontsize=big)
+bx.set_xscale("log")
 bx.set_yscale("log")
-canvas.print_figure('ol-om+tau-om'+obs+'.eps')
+canvas.print_figure('ol-om+tau-om-'+obs[num_obs]+'.eps')
