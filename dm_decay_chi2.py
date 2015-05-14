@@ -43,7 +43,7 @@ print('Using', obs[num_obs], 'as observable.')
 z_ini = 1000.
 omega_drI = 1e-3  # At large z_ini, no decay happened yet; nonzero as we use log.
 omega_b0 = 0.02  # omega_b0 is defined wrt Hn=100; Omega_b0_LCDM*h^2=omega_b0 
-omega_r0 = 2.47e-5  # The same as above.
+omega_r0 = 2.47e-5  # We should totally ignore this component.
 
 '''OHD data'''
 ohd_file = np.loadtxt('ohd.txt', usecols=range(0, 3))
@@ -132,24 +132,27 @@ Solve ODE to get hubble parameter at any x==ln(a); n.b. H0 factor included
 It's a bit redundant now that the deriv function already got E calculated; but
 deriv is designed to return only u&v. 
 '''
-def get_hubble(x, omega_dmI, omega_lambdaI, tau):
-    #print 'get_hubble argument x: ', x 
-    # x_output's first element must correspond to the initial y[:] value
+def get_omega(x, omega_dmI, omega_lambdaI, tau):
     x_output = np.insert(x, 0, np.log(1./(1+z_ini)))
     #om_history = odeint(deriv, [omega_dmI, omega_drI], x_output, args=([tau,
     #    omega_lambda, omega_b0, omega_r0],))
     #omega_dmHistory = om_history[:, 0]
     #omega_drHistory = om_history[:, 1]
-    om_history = odeint(deriv2, [np.log(omega_dmI), np.log(omega_drI)], 
+    return odeint(deriv2, [np.log(omega_dmI), np.log(omega_drI)], 
             x_output, args=([tau, omega_lambdaI, omega_b0, omega_r0],))
-    #print om_history
+
+
+def get_hubble(x, omega_dmI, omega_lambdaI, tau):
+    #print 'get_hubble argument x: ', x 
+    # x_output's first element must correspond to the initial y[:] value
     omega_lambda = omega_lambdaI  # *np.ones(len(x_output))
-    omega_b = omega_b0*np.exp(-3*x_output)
-    omega_r = omega_r0*np.exp(-4*x_output)
+    omega_b = omega_b0*np.exp(-3*x)
+    omega_r = omega_r0*np.exp(-4*x)
+    om_history = get_omega(x, omega_dmI, omega_lambdaI, tau)
     omega_dmHistory = np.exp(om_history[:, 0])
     omega_drHistory = np.exp(om_history[:, 1])
-    return np.sqrt((omega_dmHistory+omega_drHistory+omega_b+omega_r
-            )[1:]+omega_lambda)*Hn
+    return np.sqrt(omega_dmHistory[1:]+omega_drHistory[1:]+omega_b+omega_r
+            +omega_lambda)*Hn
 
 
 '''Luminosity distance is the integration of 1/H over z'''
@@ -179,16 +182,19 @@ for z in sne_z:
 
 '''Omega_dm0 as an observable'''
 def get_chi2_Omegadm0(omega_dmI, omega_lambdaI, tau):
-    return 0.
+    om0, om0_error = 0.262, 0.051
+    x_0 = 0.0  # x==ln(a(Om0)=1)
+    # get_omega returns [[omega_dm0, omega_dr0], [omega_dm1, omega_dr1]]
+    om_theory = get_omega(x_0, omega_dmI, omega_lambdaI, tau)
+    return np.power(om_theory[1, 0]+omega_b0-om0, 2)/np.power(om0_error, 2)
 
 
 '''Hubble constant as an observable'''
 def get_chi2_hubble(omega_dmI, omega_lambdaI, tau):
     H0, H0_error = 73.8, 2.4  # [kmsmpc]
-    x_H0 = 0.0  # x==ln(a(H0)=1)
-    ohd_theory = get_hubble(x_H0, omega_dmI, omega_lambdaI, tau)
-    chi2_hubble = np.power(ohd_theory[0] - H0, 2)/np.power(H0_error, 2)
-    return chi2_hubble
+    x_0 = 0.0  # x==ln(a(H0)=1)
+    ohd_theory = get_hubble(x_0, omega_dmI, omega_lambdaI, tau)
+    return np.power(ohd_theory[0] - H0, 2)/np.power(H0_error, 2)
 
 
 '''For each parameter set (initial value), get chi2'''   
