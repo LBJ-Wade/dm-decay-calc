@@ -1,6 +1,6 @@
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from scan_params import *
+from io_params import *
 import sys
 
 '''
@@ -9,17 +9,11 @@ The only argument is choosing OHD('ohd') or SNe('sne')
 if len(sys.argv) != 2 or sys.argv[1] == '-h':
     print("[*]Usage: python dm_decay_chi2.py obs")
     print("[*]obs is one of the following numbers:")
-    print("[*]0 - ohd")
-    print("[*]1 - ohd+H0")
-    print("[*]2 - sne")
-    print("[*]3 - sne+ohd")
-    print("[*]4 - sne+ohd+H0")
-    print("[*]5 - sne+ohd+H0+Om")
+    print(obs)
     raise SystemExit
 
 num_obs = int(sys.argv[1])
-obs={0:'ohd', 1:'ohd+H0', 2:'sne', 3:'sne+ohd', 4:'sne+ohd+H0',
-        5:'sne+ohd+H0+Om'}
+print('Using', obs[num_obs], 'as observable.')
 
 big = 16
 
@@ -44,11 +38,10 @@ fig = Figure()
 canvas = FigureCanvas(fig)
 ax  = fig.add_subplot(121)
 contourOmOl = ax.contour(omega_lambda_array, omega_dm_array, 
-        dchi2_omol, levels=[2.3, 5.0])
+        dchi2_omol, levels=[2.3, 5.0], colors=('r', 'b'))
 ax.plot(peak_ol, peak_om, 'r*')
 ax.set_xlabel(r'$\Omega_\Lambda$', fontsize=big)
-ax.set_ylabel(r'$\Omega_{DM}$', fontsize=big)
-ax.set_yscale("log")
+ax.set_ylabel(r'$\Omega_{dm}$', fontsize=big)
 
 '''Integrate over the second (omega_lambda) dimension'''
 chi2_omtau = -2*np.log(np.sum(np.exp(-dchi2/2.), axis=1))
@@ -60,10 +53,9 @@ peak_tau = tau_array[peak_tau_index]
 dchi2_omtau = chi2_omtau-minchi2_omtau
 bx = fig.add_subplot(122)
 contourOmTau = bx.contour(tau_array, omega_dm_array, dchi2_omtau, 
-        levels=[2.3, 5.0])
+        levels=[2.3, 5.0], colors=('r', 'b'))
 bx.plot(peak_tau, peak_om, 'r*')
 bx.set_xlabel(r'$\tau$', fontsize=big)
 #bx.set_ylabel(r'$\Omega_m$', fontsize=big)
 bx.set_xscale("log")
-bx.set_yscale("log")
 canvas.print_figure('ol-om+tau-om-'+obs[num_obs]+'.eps')
