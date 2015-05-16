@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 Constraints on the dark matter decay model.
+Functionality:
+    1. --- 
+
+Usage:
+    1. "python dm_decay_chi2.py -h" for usage.
+    2. E.g., "python dm_decay_chi2.py 0" calculates chi2 for OHD data.
+    3. The resulted chi2 values are stored in .bin files.
+    4. These .bin files are processed by contour_plot.py to get contour plots.
+    5. E.g., "python contour_plot.py 0,1" plots contours based on OHD&h0 data.
 
 TODO:
     1. Solve the problem of the large discrepancy in the orders
@@ -198,43 +207,15 @@ def get_chi2_sne(zI, omega_dmI, omega_lambdaI, tau):
 def get_chi2(num_obs, zI, omega_dmI, omega_lambdaI, tau):
 
     if num_obs == 0:
-        # chi2_ohd
         return get_chi2_ohd(zI, omega_dmI, omega_lambdaI, tau)
     elif num_obs == 1:
-        # chi2_ohd+chi2_hubble
-        return get_chi2_ohd(zI, omega_dmI, omega_lambdaI, tau) +\
-            get_chi2_hubble(zI, omega_dmI, omega_lambdaI, tau)
-    elif num_obs == 2:
-        # chi2_ohd+chi2_hubble+chi2_om0
-        return get_chi2_ohd(zI, omega_dmI, omega_lambdaI, tau) +\
-            get_chi2_hubble(zI, omega_dmI, omega_lambdaI, tau) +\
-           get_chi2_omegam0(zI, omega_dmI, omega_lambdaI, tau)
-    elif num_obs == 3:
-        # chi2_om0
-        return get_chi2_omegam0(zI, omega_dmI, omega_lambdaI, tau)
-    elif num_obs == 4:
-        # chi2_hubble
         return get_chi2_hubble(zI, omega_dmI, omega_lambdaI, tau)
-    elif num_obs == 12:
-        # chi2_sne
+    elif num_obs == 2:
+        return get_chi2_omegam0(zI, omega_dmI, omega_lambdaI, tau)
+    elif num_obs == 3:
         return get_chi2_sne(zI, omega_dmI, omega_lambdaI, tau)
-    elif num_obs == 13:
-        # chi2_sne+chi2_ohd
-        return get_chi2_sne(zI, omega_dmI, omega_lambdaI, tau) +\
-            get_chi2_ohd(zI, omega_dmI, omega_lambdaI, tau)
-    elif num_obs == 14:
-        # chi2_sne+chi2_ohd+chi2_hubble
-        return get_chi2_sne(zI, omega_dmI, omega_lambdaI, tau) +\
-               get_chi2_ohd(zI, omega_dmI, omega_lambdaI, tau) +\
-            get_chi2_hubble(zI, omega_dmI, omega_lambdaI, tau)
-    elif num_obs == 15:
-        # chi2_sne+chi2_ohd+chi2_hubble+chi2_om0 
-        return get_chi2_sne(zI, omega_dmI, omega_lambdaI, tau) +\
-               get_chi2_ohd(zI, omega_dmI, omega_lambdaI, tau) +\
-            get_chi2_hubble(zI, omega_dmI, omega_lambdaI, tau) +\
-           get_chi2_omegam0(zI, omega_dmI, omega_lambdaI, tau)
     else:
-        print("No such observation probe available / Under construction.")
+        print("No such observation probe available yet.")
         raise SystemExit
 
 """

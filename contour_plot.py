@@ -8,21 +8,29 @@ The only argument is choosing OHD('ohd') or SNe('sne')
 '''
 if len(sys.argv) != 2 or sys.argv[1] == '-h':
     print("[*]Usage: python dm_decay_chi2.py obs")
-    print("[*]obs is one of the following numbers:")
+    print("[*]obs is a sequence formed of the following numbers:")
     print(obs)
+    print("[*]Separate your choices with a comma without spaces.")
+    print("[*]Duplicate terms will be counted only once.")
     raise SystemExit
 
-num_obs = int(sys.argv[1])
-print('Using', obs[num_obs], 'as observable.')
+chi2 = np.zeros((n_omega_dm, n_omega_lambda, n_tau))
+obs_list = sorted(set(sys.argv[1].split(',')))
 
-big = 16
+name_plot = ''
+print('Using {')
+for inum, num_obs in enumerate(obs_list):
+    num_obs = int(num_obs)
+    print obs[num_obs]
+    name_plot += obs[num_obs]
+    if inum != len(obs_list)-1:
+        name_plot += '-'
+    fid = 'chi2file-'+obs[num_obs]+'-'+str(n_omega_dm)+'-'+\
+            str(n_omega_lambda)+'-'+str(n_tau)+'.bin'
+    chi2 += np.fromfile(fid).reshape(n_omega_dm, n_omega_lambda, n_tau)
 
-fid = "chi2file-"+obs[num_obs]+'-'+str(n_omega_dm)+'-'+str(n_omega_lambda)+\
-        '-'+str(n_tau)+'.bin'
-#fid = "chi2file-"+str(n_omega_dm)+'-'+str(n_omega_lambda)+'-'+str(n_tau)+'-sum.bin'
+print('} as observables.')
 
-chi = np.fromfile(fid)
-chi2 = chi.reshape(n_omega_dm, n_omega_lambda, n_tau)
 minchi2 = np.amin(chi2)
 dchi2 = chi2-minchi2
 
@@ -40,8 +48,8 @@ ax  = fig.add_subplot(121)
 contourOmOl = ax.contour(omega_lambda_array, omega_dm_array, 
         dchi2_omol, levels=[2.3, 5.0], colors=('r', 'b'))
 ax.plot(peak_ol, peak_om, 'r*')
-ax.set_xlabel(r'$\Omega_\Lambda$', fontsize=big)
-ax.set_ylabel(r'$\Omega_{dm}$', fontsize=big)
+ax.set_xlabel(r'$\Omega_\Lambda$', fontsize=big_font)
+ax.set_ylabel(r'$\Omega_{dm}$', fontsize=big_font)
 
 '''Integrate over the second (omega_lambda) dimension'''
 chi2_omtau = -2*np.log(np.sum(np.exp(-dchi2/2.), axis=1))
@@ -55,7 +63,6 @@ bx = fig.add_subplot(122)
 contourOmTau = bx.contour(tau_array, omega_dm_array, dchi2_omtau, 
         levels=[2.3, 5.0], colors=('r', 'b'))
 bx.plot(peak_tau, peak_om, 'r*')
-bx.set_xlabel(r'$\tau$', fontsize=big)
-#bx.set_ylabel(r'$\Omega_m$', fontsize=big)
+bx.set_xlabel(r'$\tau$', fontsize=big_font)
 bx.set_xscale("log")
-canvas.print_figure('ol-om+tau-om-'+obs[num_obs]+'.eps')
+canvas.print_figure(name_plot+'.eps')
