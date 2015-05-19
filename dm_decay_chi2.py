@@ -133,6 +133,17 @@ def get_dl(z, zI, omega_dmI, omega_lambdaI, tau):
     return (1.0+z)*c*quad(integrand, 0., z, args=(zI, omega_dmI, omega_lambdaI,
         tau))[0]
 
+def get_dl_union2(z_union2, zI, omega_dmI, omega_lambdaI, tau):
+    z_list = np.logspace(np.log10(min(sne_z)), np.log10(max(sne_z)), 20)
+    dl_list = []
+    for z in z_list:
+        dl_list.append(get_dl(z, zI, omega_dmI, omega_lambdaI, tau))
+
+    from scipy import interpolate
+    func = interpolate.InterpolatedUnivariateSpline(z_list, dl_list)
+    return func(sne_z)
+
+
 def integrand_lcdm(z, omega_dm0, omega_lambda0):
     H0 =70.
     return 1.0/(np.sqrt(omega_dm0*(1+z)**3 + omega_lambda0 + 
@@ -181,6 +192,23 @@ def get_chi2_ohd(zI, omega_dmI, omega_lambdaI, tau):
     return np.sum(np.power(ohd_theory-ohd_data, 2)/np.power(ohd_error, 2))
 
 
+'''Interpolation.'''
+def get_chi2_sne(zI, omega_dmI, oemga_lambdaI, tau):
+    chi2_sne = 0
+    dl = get_dl_union2(sne_z, zI, omega_dmI, omega_lambdaI, tau)
+    mu = 5*np.log10(dl)+25.0
+    chi2_sne = np.sum(np.power(mu-sne_data, 2)/np.power(sne_error, 2))
+    return chi2_sne
+
+'''Straightforward calculation. No covariance information'''
+def get_chi2_sne1(zI, omega_dmI, omega_lambdaI, tau):
+    chi2_sne=0
+    for iz, z in enumerate(sne_z):
+        dl = get_dl(z, zI, omega_dmI, omega_lambdaI, tau)
+        mu = 5*np.log10(dl)+25.0
+        chi2_sne += np.power((mu-sne_data[iz]), 2)/np.power(sne_error[iz], 2)
+    return chi2_sne
+
 '''
 With system error + covariance; 
 NOT usable as sne_z is in different order than in sne_inv_cov.
@@ -194,15 +222,6 @@ def get_chi2_sne2(zI, omega_dmI, omega_lambdaI, tau):
     chi2_sne=np.dot(mu-sne_data, np.dot(mu-sne_data, sne_inv_cov))
     return chi2_sne
 
-
-'''No covariance information'''
-def get_chi2_sne(zI, omega_dmI, omega_lambdaI, tau):
-    chi2_sne=0
-    for iz, z in enumerate(sne_z):
-        dl = get_dl(z, zI, omega_dmI, omega_lambdaI, tau)
-        mu = 5*np.log10(dl)+25.0
-        chi2_sne += np.power((mu-sne_data[iz]), 2)/np.power(sne_error[iz], 2)
-    return chi2_sne
 
 def get_chi2(num_obs, zI, omega_dmI, omega_lambdaI, tau):
 
@@ -220,6 +239,7 @@ def get_chi2(num_obs, zI, omega_dmI, omega_lambdaI, tau):
 
 """
 '''TEST MODULE'''
+import time
 class test:
     h = 0.7
     zI = 1000.
@@ -229,19 +249,32 @@ class test:
     omega_lI = omega_l0*h**2 
     tau = 1000.
 
-for z in range(10):
-    x=np.log(1./(z+1.0))
+t1=time.time()
+dl=[]
+for z in sne_z:
+#    x=np.log(1./(z+1.0))
+    '''
     omega=get_omega(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
     print z, omega[1:,:], test.omega_mI*((1+z)/(1+test.zI))**3
     hubble = get_hubble(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
     hubble_lcdm = Hn*test.h*np.sqrt(test.omega_m0*(1.+z)**3 + test.omega_l0)
     print hubble, hubble_lcdm
-    dl = get_dl(z, test.zI, test.omega_mI, test.omega_lI, test.tau)
-    dl_lcdm = get_dl_lcdm(z, test.omega_m0, test.omega_l0)
-    print dl, dl_lcdm
+    '''
+    dl.append(get_dl(z, test.zI, test.omega_mI, test.omega_lI, test.tau))
+#    dl_lcdm = get_dl_lcdm(z, test.omega_m0, test.omega_l0)
+#    print dl, dl_lcdm
+t2=time.time()
+print 'time:', t2-t1
+t1=time.time()
+dl_interp = get_dl_union2(sne_z, test.zI, test.omega_mI, test.omega_lI,
+        test.tau)
+t2=time.time()
+print 'interpolation time', t2-t1
+import matplotlib.pyplot as plt
+plt.figure()
+plt.plot(sne_z, dl, 'g-', sne_z, dl_interp, 'r--')
+plt.savefig('dl.eps')
 raw_input()
-
-'''End Of Test'''
 """
 
 '''Fill in the chi2 matrix'''
