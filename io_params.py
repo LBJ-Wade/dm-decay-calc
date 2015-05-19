@@ -1,11 +1,17 @@
 import numpy as np
 
-# Remember to update get_chi2 after changing this.
-obs={0:'ohd',
+# Need to be consistent with get_chi2().
+obs_dict = {0:'ohd',
      1:'h0', 
      2:'om0', 
-     3:'sne' 
-     }
+     3:'sne'}
+
+# Color for contour level lines.
+color_dict = {0:'g',
+        1:'m',
+        2:'y',
+        3:'b',
+        10:'r'}
 
 big_font = 16
 '''boundary condition'''

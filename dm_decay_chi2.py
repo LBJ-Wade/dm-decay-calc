@@ -237,45 +237,51 @@ def get_chi2(num_obs, zI, omega_dmI, omega_lambdaI, tau):
         print("No such observation probe available yet.")
         raise SystemExit
 
-"""
+
 '''TEST MODULE'''
 import time
 class test:
     h = 0.7
-    zI = 1000.
     omega_m0 = 0.3
     omega_l0 = 0.7
     omega_mI = omega_m0*h**2 * (1+zI)**3
     omega_lI = omega_l0*h**2 
-    tau = 1000.
 
-t1=time.time()
-dl=[]
-for z in sne_z:
+    def __init__(self, zI, tau):
+        self.zI = zI
+        self.tau= tau
+
+    def __repr__(self):
+        return "Test case:", str(self.__dict__)
+
+test = test(1000., 1000.)
+#t1=time.time()
+#dl=[]
+#
+#for z in sne_z:
 #    x=np.log(1./(z+1.0))
-    '''
-    omega=get_omega(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
-    print z, omega[1:,:], test.omega_mI*((1+z)/(1+test.zI))**3
-    hubble = get_hubble(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
-    hubble_lcdm = Hn*test.h*np.sqrt(test.omega_m0*(1.+z)**3 + test.omega_l0)
-    print hubble, hubble_lcdm
-    '''
-    dl.append(get_dl(z, test.zI, test.omega_mI, test.omega_lI, test.tau))
+#    '''
+#    omega=get_omega(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
+#    print z, omega[1:,:], test.omega_mI*((1+z)/(1+test.zI))**3
+#    hubble = get_hubble(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
+#    hubble_lcdm = Hn*test.h*np.sqrt(test.omega_m0*(1.+z)**3 + test.omega_l0)
+#    print hubble, hubble_lcdm
+#    '''
+#    dl.append(get_dl(z, test.zI, test.omega_mI, test.omega_lI, test.tau))
 #    dl_lcdm = get_dl_lcdm(z, test.omega_m0, test.omega_l0)
 #    print dl, dl_lcdm
-t2=time.time()
-print 'time:', t2-t1
+#t2=time.time()
+#print 'time:', t2-t1
 t1=time.time()
 dl_interp = get_dl_union2(sne_z, test.zI, test.omega_mI, test.omega_lI,
         test.tau)
 t2=time.time()
 print 'interpolation time', t2-t1
 import matplotlib.pyplot as plt
-plt.figure()
-plt.plot(sne_z, dl, 'g-', sne_z, dl_interp, 'r--')
-plt.savefig('dl.eps')
+#plt.figure()
+#plt.plot(sne_z, dl, 'g-', sne_z, dl_interp, 'r--')
+#plt.savefig('dl.eps')
 raw_input()
-"""
 
 '''Fill in the chi2 matrix'''
 chi2 = np.zeros((n_omega_dm, n_omega_lambda, n_tau))
