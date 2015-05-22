@@ -20,13 +20,13 @@ omega_b0 = 0 #0.02  # omega_b0 is defined wrt Hn=100 --> Omega_b0_LCDM*h^2=omega
 omega_r0 = 0 #2.47e-5  # Added for formula precision; should be negligible.
 
 '''scanning parameters'''
-n_omega_dm = 25 
-n_omega_lambda = 25
-n_tau	   = 25
+n_omega_dm = 30
+n_omega_lambda = 30
+n_tau	   = 30
 
 # value at z=z_ini
 zI = 1000.
-omega_dm_array=np.linspace(1.0e7, 6.0e8, n_omega_dm)
+omega_dm_array=np.linspace(1.0e7, 3.5e8, n_omega_dm)
 # value at z=0
-omega_lambda_array=np.linspace(0.1, 0.9, n_omega_lambda)
-tau_array=np.logspace(-2, 3, n_tau)
+omega_lambda_array=np.linspace(0.1, 0.6, n_omega_lambda)
+tau_array=np.logspace(-1.7, 3, n_tau)

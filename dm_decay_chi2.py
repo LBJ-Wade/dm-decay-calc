@@ -30,14 +30,12 @@ import sys
 '''
 The only argument is choosing OHD('ohd') or SNe('sne')
 '''
-if len(sys.argv) != 2 or sys.argv[1] == '-h':
+if len(sys.argv) != 2 or not sys.argv[1] in [0, 1, 2, 3, '-d']:
     print("[*]Usage: python dm_decay_chi2.py obs")
     print("[*]obs is one of the following numbers:")
-    print(obs)
+    print(obs_dict)
+    print("[*]Or '-d' for debugging purposes.")
     raise SystemExit
-
-num_obs = int(sys.argv[1])
-print('Using', obs[num_obs], 'as observable.')
 
 '''OHD data'''
 ohd_file = np.loadtxt('ohd.txt', usecols=range(0, 3))
@@ -238,67 +236,80 @@ def get_chi2(num_obs, zI, omega_dmI, omega_lambdaI, tau):
         raise SystemExit
 
 
-'''TEST MODULE'''
-import time
-class test:
-    h = 0.7
-    omega_m0 = 0.3
-    omega_l0 = 0.7
-    omega_mI = omega_m0*h**2 * (1+zI)**3
-    omega_lI = omega_l0*h**2 
+if sys.argv[1] == '-d':
+    '''For debugging & test'''
+    import time
+    class test:
+        omega_mI = 1.5e8
+        omega_lI = 0.37
 
-    def __init__(self, zI, tau):
-        self.zI = zI
-        self.tau= tau
+        def __init__(self, zI, tau):
+            self.zI = zI
+            self.tau= tau
 
-    def __repr__(self):
-        return "Test case:", str(self.__dict__)
+        def __repr__(self):
+            return "Test case:", str(self.__dict__)
 
-test = test(1000., 1000.)
-#t1=time.time()
-#dl=[]
-#
-#for z in sne_z:
-#    x=np.log(1./(z+1.0))
-#    '''
-#    omega=get_omega(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
-#    print z, omega[1:,:], test.omega_mI*((1+z)/(1+test.zI))**3
-#    hubble = get_hubble(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
-#    hubble_lcdm = Hn*test.h*np.sqrt(test.omega_m0*(1.+z)**3 + test.omega_l0)
-#    print hubble, hubble_lcdm
-#    '''
-#    dl.append(get_dl(z, test.zI, test.omega_mI, test.omega_lI, test.tau))
-#    dl_lcdm = get_dl_lcdm(z, test.omega_m0, test.omega_l0)
-#    print dl, dl_lcdm
-#t2=time.time()
-#print 'time:', t2-t1
-t1=time.time()
-dl_interp = get_dl_union2(sne_z, test.zI, test.omega_mI, test.omega_lI,
-        test.tau)
-t2=time.time()
-print 'interpolation time', t2-t1
-import matplotlib.pyplot as plt
-#plt.figure()
-#plt.plot(sne_z, dl, 'g-', sne_z, dl_interp, 'r--')
-#plt.savefig('dl.eps')
-raw_input()
+    test1 = test(1000., 1000.)
+    test2 = test(1000., 10.)
+    test3 = test(1000., 0.01)
 
-'''Fill in the chi2 matrix'''
-chi2 = np.zeros((n_omega_dm, n_omega_lambda, n_tau))
-minchi2 = 100000
-for iom, omega_dmI in enumerate(omega_dm_array):
-    for iol, omega_lambdaI in enumerate(omega_lambda_array):
-        for itau, tau in enumerate(tau_array):
-            tmp = get_chi2(num_obs, zI, omega_dmI, omega_lambdaI, tau)
-            print iom, iol, itau, 'of', n_omega_dm, n_omega_lambda, n_tau,\
-            ':', tmp
-            if minchi2 > tmp:
-                minchi2 = tmp
-                # peakOm, peakOl, peakTau = omega_dmI, omega_lambdaI, tau
+    #t1=time.time()
+    #dl=[]
+    #
+    #for z in sne_z:
+    #    x=np.log(1./(z+1.0))
+    #    '''
+    #    omega=get_omega(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
+    #    print z, omega[1:,:], test.omega_mI*((1+z)/(1+test.zI))**3
+    #    hubble = get_hubble(x, test.zI, test.omega_mI, test.omega_lI, test.tau)
+    #    hubble_lcdm = Hn*test.h*np.sqrt(test.omega_m0*(1.+z)**3 + test.omega_l0)
+    #    print hubble, hubble_lcdm
+    #    '''
+    #    dl.append(get_dl(z, test.zI, test.omega_mI, test.omega_lI, test.tau))
+    #    dl_lcdm = get_dl_lcdm(z, test.omega_m0, test.omega_l0)
+    #    print dl, dl_lcdm
+    #t2=time.time()
+    #print 'time:', t2-t1
+    mu1_interp = 5*np.log10(get_dl_union2(sne_z, test1.zI, test1.omega_mI, test1.omega_lI,
+            test1.tau))+25.
+    mu2_interp = 5*np.log10(get_dl_union2(sne_z, test2.zI, test2.omega_mI, test2.omega_lI,
+            test2.tau))+25.
+    mu3_interp = 5*np.log10(get_dl_union2(sne_z, test3.zI, test3.omega_mI, test3.omega_lI,
+            test3.tau))+25.
+    import matplotlib.pyplot as plt
+    plt.figure()
+    p1000,=plt.plot(sne_z, mu1_interp, 'b.', label='test1')
+    p10,=plt.plot(sne_z, mu2_interp, 'r--', label='test2') 
+    p01,=plt.plot(sne_z, mu3_interp, 'g-.', label='test3')
+    pdata=plt.errorbar(sne_z, sne_data, yerr = sne_error, fmt='k--o',
+        label='data')
+    plt.legend([p1000, p10, p01],[r'$\tau=1000$', r'$\tau=10$', r'$\tau=0.1$'],
+            loc=4)
+    plt.xlabel(r'$z$')
+    plt.ylabel(r'$\mu$')
+    plt.savefig('fit.eps')
 
-            chi2[iom, iol, itau] = tmp
-       
-print('minchi2 is ', minchi2)
-fid="chi2file-"+obs[num_obs]+'-'+str(n_omega_dm)+'-'+str(n_omega_lambda)+'-'+str(n_tau)+'.bin'
-chi2file = chi2.tofile(fid)
-#np.savetxt('chi2-hr.txt', chi2, fmt="%.2f")
+else:
+    num_obs = int(sys.argv[1])
+    print('Using', obs_dict[num_obs], 'as observable.')
+
+    '''Fill in the chi2 matrix'''
+    chi2 = np.zeros((n_omega_dm, n_omega_lambda, n_tau))
+    minchi2 = 100000
+    for iom, omega_dmI in enumerate(omega_dm_array):
+        for iol, omega_lambdaI in enumerate(omega_lambda_array):
+            for itau, tau in enumerate(tau_array):
+                tmp = get_chi2(num_obs, zI, omega_dmI, omega_lambdaI, tau)
+                print iom, iol, itau, 'of', n_omega_dm, n_omega_lambda, n_tau,\
+                ':', tmp
+                if minchi2 > tmp:
+                    minchi2 = tmp
+                    peakOm, peakOl, peakTau = omega_dmI, omega_lambdaI, tau
+
+                chi2[iom, iol, itau] = tmp
+           
+    print 'minchi2 ', minchi2, 'at [', omega_dmI, omega_lambdaI, tau, '].'
+    fid="chi2file-"+obs_dict[num_obs]+'-'+str(n_omega_dm)+'-'+str(n_omega_lambda)+'-'+str(n_tau)+'.bin'
+    chi2file = chi2.tofile(fid)
+    #np.savetxt('chi2-hr.txt', chi2, fmt="%.2f")
